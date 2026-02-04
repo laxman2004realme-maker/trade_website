@@ -1,5 +1,4 @@
 import React from 'react';
-import { formatDateReadable } from '../utils/dateUtils';
 import '../styles/UploadCard.css';
 
 interface UploadCardProps {
@@ -14,7 +13,6 @@ interface UploadCardProps {
 const UploadCard: React.FC<UploadCardProps> = ({
     filename,
     uploadedAt,
-    dataDate,
     formattedDataDate,
     onLoad,
     isLoading = false
