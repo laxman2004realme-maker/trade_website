@@ -7,7 +7,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://trade-web-backend-dbxjeqm31-laxmans-projects-7bd3c892.vercel.app',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'https://trade-web-backend-dbxjeqm31-laxmans-projects-7bd3c892.vercel.app',
         changeOrigin: true,
       }
     }
