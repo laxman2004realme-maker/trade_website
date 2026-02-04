@@ -1,0 +1,89 @@
+.upload-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    hover-effect: subtle;
+}
+
+.upload-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.upload-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.upload-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.upload-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.upload-filename {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    word-break: break-word;
+}
+
+.upload-card-dates {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.date-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.date-label {
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.date-value {
+    color: #374151;
+    font-weight: 600;
+}
+
+.upload-card-btn {
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.upload-card-btn:hover:not(:disabled) {
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.upload-card-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
