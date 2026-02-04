@@ -1,8 +1,9 @@
 // API helper for uploading CSV to Cloudinary and MongoDB
+import { getFullUrl } from './apiConfig';
 
 export async function uploadCSVToServer(filename: string, csvText: string) {
   try {
-    const response = await fetch('/api/upload', {
+    const response = await fetch(getFullUrl('/api/upload'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, text: csvText })
@@ -18,7 +19,7 @@ export async function uploadCSVToServer(filename: string, csvText: string) {
 
 export async function bulkUploadCSVToServer(files: Array<{ filename: string; text: string }>) {
   try {
-    const response = await fetch('/api/bulk-upload', {
+    const response = await fetch(getFullUrl('/api/bulk-upload'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ files })
@@ -33,7 +34,7 @@ export async function bulkUploadCSVToServer(files: Array<{ filename: string; tex
 }
 
 export async function fetchUploads() {
-  const res = await fetch('/api/uploads');
+  const res = await fetch(getFullUrl('/api/uploads'));
   if (!res.ok) throw new Error('Failed to fetch uploads');
   const json = await res.json();
   return json.uploads || [];

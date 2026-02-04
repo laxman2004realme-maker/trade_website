@@ -1,9 +1,11 @@
 /**
  * Test backend connectivity
  */
+import { getFullUrl } from './apiConfig';
+
 export async function testBackendConnection(): Promise<boolean> {
     try {
-        const res = await fetch('/health');
+        const res = await fetch(getFullUrl('/health'));
         return res.ok;
     } catch (err) {
         console.error('Backend health check failed:', err);
@@ -16,7 +18,7 @@ export async function testBackendConnection(): Promise<boolean> {
  */
 export async function fetchHistoricalDataList() {
     try {
-        const res = await fetch('/api/historical-data');
+        const res = await fetch(getFullUrl('/api/historical-data'));
         if (!res.ok) {
             const errorText = await res.text();
             throw new Error(`HTTP ${res.status}: ${errorText}`);
@@ -36,7 +38,7 @@ export async function fetchHistoricalDataList() {
  * Fetch specific file metadata
  */
 export async function fetchFileData(fileId: string) {
-    const res = await fetch(`/api/historical-data/${fileId}`);
+    const res = await fetch(getFullUrl(`/api/historical-data/${fileId}`));
     if (!res.ok) throw new Error('Failed to fetch file data');
     const json = await res.json();
     return json.file;
