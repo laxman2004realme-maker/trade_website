@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
     try {
       await uploadCSVToServer(file.name, text);
       loadUploads();
-      
+
       // After upload, try to calculate 21-day averages from historical data
       if (dateFormatted) {
         try {
@@ -93,11 +93,11 @@ const Dashboard: React.FC = () => {
             .sort((a: any, b: any) => new Date(a.dataDate).getTime() - new Date(b.dataDate).getTime());
 
           // Find uploaded file in candidates
-          const idx = candidates.findIndex((u: any) => 
-            u.filename === file.name || 
+          const idx = candidates.findIndex((u: any) =>
+            u.filename === file.name ||
             (u.dataDate && formatDateString(u.dataDate) === dateFormatted)
           );
-          
+
           if (idx >= 0) {
             const start = Math.max(0, idx - 21 + 1);
             const slice = candidates.slice(start, idx + 1);
@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
       const parsed = csvUtils.parseCSV(csvText);
       setStocks(parsed);
       setLoadedFileName(entry.filename || 'uploaded');
-      
+
       // Extract date from filename to avoid timezone issues with backend date
       const dateMatch = (entry.filename || '').match(/(\d{8})/);
       if (dateMatch) {
@@ -167,7 +167,7 @@ const Dashboard: React.FC = () => {
       } else {
         setLoadedDataDate(entry.formattedDataDate || null);
       }
-      
+
       // Reset search filters when loading a new file
       setAbove21Search('');
       setGainersSearch('');
@@ -184,12 +184,12 @@ const Dashboard: React.FC = () => {
           .filter((u: any) => u.dataDate)
           .sort((a: any, b: any) => new Date(a.dataDate).getTime() - new Date(b.dataDate).getTime());
 
-        const idx = candidates.findIndex((u: any) => 
-          u.filename === entry.filename || 
+        const idx = candidates.findIndex((u: any) =>
+          u.filename === entry.filename ||
           (u.dataDate && u._id === entry._id) ||
           (u.dataDate && formatDateString(u.dataDate) === formatDateString(entry.dataDate))
         );
-        
+
         const start = Math.max(0, idx >= 0 ? idx - 21 + 1 : 0);
         const slice = idx >= 0 ? candidates.slice(start, idx + 1) : candidates.slice(-22);
 

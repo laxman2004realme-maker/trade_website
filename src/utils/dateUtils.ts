@@ -36,7 +36,7 @@ export function formatDate(date: Date | null): string | null {
 export function formatDateReadable(date: Date | string | null): string {
     if (!date) return 'Unknown';
     let dateObj: Date;
-    
+
     if (typeof date === 'string') {
         // Parse YYYY-MM-DD format without timezone conversion
         const [year, month, day] = date.split('-').map(Number);
@@ -44,7 +44,7 @@ export function formatDateReadable(date: Date | string | null): string {
     } else {
         dateObj = date;
     }
-    
+
     return dateObj.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
