@@ -1,73 +1,134 @@
-# React + TypeScript + Vite
+# NSE EOD Data Analyzer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack dashboard for analyzing NSE (National Stock Exchange) EOD CSV data.
 
-Currently, two official plugins are available:
+The project includes:
+- `my-app/`: React + TypeScript + Vite frontend dashboard
+- `backend/`: Node.js + Express API for CSV upload, Cloudinary storage, and MongoDB metadata
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- Upload single or multiple NSE EOD CSV files
+- Parse and filter EQ series data
+- View top gainers, top losers, top turnover, and most traded stocks
+- Calculate 21-day average volume breakouts
+- Persist uploads to Cloudinary and metadata to MongoDB
+- Load historical uploads and clean up older records
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- Frontend: React, TypeScript, Vite
+- Backend: Node.js, Express
+- Database: MongoDB Atlas
+- File Storage: Cloudinary
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Project Structure
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+Website/
+├─ backend/
+│  ├─ src/
+│  ├─ server.js
+│  └─ .env.example
+├─ my-app/
+│  ├─ src/
+│  ├─ vite.config.ts
+│  └─ .env.example
+├─ DEBUGGING_GUIDE.md
+└─ README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Prerequisites
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Node.js 18+ (recommended)
+- npm 9+
+- MongoDB connection URI
+- Cloudinary account credentials
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Local Setup
+
+1. Clone the repo and move into the project root.
+
+```bash
+git clone <your-repo-url>
+cd Website
 ```
+
+2. Setup and run backend.
+
+```bash
+cd backend
+npm install
+# create backend/.env from backend/.env.example and update values
+npm start
+```
+
+Backend runs on `http://localhost:5000` by default.
+
+3. Setup and run frontend (new terminal).
+
+```bash
+cd my-app
+npm install
+npm run dev
+```
+
+Frontend runs on `http://localhost:5173`.
+
+## Environment Variables
+
+Create `backend/.env` with:
+
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.mongodb.net/stocks?retryWrites=true&w=majority
+PORT=5000
+```
+
+Optional frontend env file `my-app/.env.local`:
+
+```env
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_API_KEY=your_api_key
+VITE_CLOUDINARY_API_SECRET=your_api_secret
+```
+
+## Frontend-Backend Connection (Dev)
+
+`my-app/vite.config.ts` currently proxies `/api` and `/health`.
+
+For local backend development, set proxy target to:
+- `http://localhost:5000`
+
+For remote backend development, keep your deployed backend URL as target.
+
+## API Endpoints
+
+- `GET /health` - health check
+- `POST /api/upload` - upload one CSV
+- `POST /api/bulk-upload` - upload multiple CSV files
+- `GET /api/uploads` - recent uploads
+- `GET /api/historical-data` - list historical uploads
+- `GET /api/historical-data/:fileId` - get one uploaded file record
+- `DELETE /api/historical-data/cleanup?days=30` - keep latest N records, remove older ones
+
+## CSV Requirements
+
+- Filename should contain date in `DDMMYYYY` format.
+- Example: `sec_bhavdata_full_02022026.csv`
+- Expected columns include:
+`SYMBOL`, `SERIES`, `DATE1`, `PREV_CLOSE`, `OPEN_PRICE`, `HIGH_PRICE`, `LOW_PRICE`, `CLOSE_PRICE`, `TTL_TRD_QNTY`, `TURNOVER_LACS`
+
+## Troubleshooting
+
+- See [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for historical-load debugging.
+- If upload fails, verify Cloudinary credentials in `backend/.env`.
+- If historical endpoints fail, verify `MONGODB_URI` and DB network access.
+
+## Security Note Before Publishing
+
+- Do not commit real API keys or database credentials to GitHub.
+- Rotate keys immediately if any credentials were previously exposed in local/example files.
+
