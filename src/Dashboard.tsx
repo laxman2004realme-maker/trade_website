@@ -345,11 +345,7 @@ const Dashboard: React.FC = () => {
     return base; // Default: by percentAbove
   }, [stocks, above21DaySortBy, historical21Results]);
 
-  // Helper function to determine if open-close difference is higher (red) or lower (green)
-  const getOpenCloseClass = (stock: StockData): 'higher' | 'lower' => {
-    const diff = stock.open - stock.close;
-    return diff > 0 ? 'higher' : 'lower';
-  };
+
 
   // Helper function to determine if open-close difference is higher (red) or lower (green)
   const getOpenCloseClass = (stock: StockData): 'higher' | 'lower' => {
