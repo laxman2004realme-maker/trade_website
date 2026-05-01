@@ -265,6 +265,8 @@ export default {
   calculateHistorical21DayAverage,
   sortBy21DayTurnoverAsc: (stocks: any[]) => stocks.slice().sort((a, b) => a.currentTurnover - b.currentTurnover),
   sortBy21DayTurnoverDesc: (stocks: any[]) => stocks.slice().sort((a, b) => b.currentTurnover - a.currentTurnover),
+  sortBy21DayAverageVolumeAsc: (stocks: any[]) => stocks.slice().sort((a, b) => a.avgQnty21Days - b.avgQnty21Days),
+  sortBy21DayAverageVolumeDesc: (stocks: any[]) => stocks.slice().sort((a, b) => b.avgQnty21Days - a.avgQnty21Days),
   sortBy21DayVolumeAsc: (stocks: any[]) => stocks.slice().sort((a, b) => a.currentQnty - b.currentQnty),
   sortBy21DayVolumeDesc: (stocks: any[]) => stocks.slice().sort((a, b) => b.currentQnty - a.currentQnty),
 };

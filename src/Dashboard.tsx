@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import csvUtils from './utils/csvParser';
 import type { StockData } from './utils/csvParser';
 import { uploadCSVToServer, fetchUploads, fetchCSVFromUrl } from './utils/api';
@@ -9,6 +9,15 @@ import UploadCard from './components/UploadCard';
 import StatCard from './components/StatCard';
 import ErrorBoundary from './components/ErrorBoundary';
 import './Dashboard.css';
+
+type Above21DayResult = StockData & {
+  avgQnty21Days: number;
+  currentQnty: number;
+  percentAboveAvg: number;
+  avg21DaysTurnover?: number;
+  currentTurnover?: number;
+  daysOfData?: number;
+};
 
 const Dashboard: React.FC = () => {
   // Utility to format date as YYYY-MM-DD without timezone conversion
@@ -37,13 +46,14 @@ const Dashboard: React.FC = () => {
   const [showAllAbove21, setShowAllAbove21] = useState(false);
   const [above21Search, setAbove21Search] = useState('');
   const [uploadSearch, setUploadSearch] = useState('');
-  const [historical21Results, setHistorical21Results] = useState<any[] | null>(null);
+  const [historical21Results, setHistorical21Results] = useState<Above21DayResult[] | null>(null);
   const [showAllGainers, setShowAllGainers] = useState(false);
   const [gainersSearch, setGainersSearch] = useState('');
   const [showAllLosers, setShowAllLosers] = useState(false);
   const [losersSearch, setLosersSearch] = useState('');
   const [turnoverSearch, setTurnoverSearch] = useState('');
   const [mostTradedSearch, setMostTradedSearch] = useState('');
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
 
   const loadUploads = async () => {
     try {
@@ -56,6 +66,19 @@ const Dashboard: React.FC = () => {
 
   React.useEffect(() => {
     loadUploads();
+  }, []);
+
+  useEffect(() => {
+    const updateHeaderState = () => {
+      setIsHeaderCompact(window.scrollY > 24);
+    };
+
+    updateHeaderState();
+    window.addEventListener('scroll', updateHeaderState, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', updateHeaderState);
+    };
   }, []);
 
   const handleFile = async (file?: File) => {
@@ -336,23 +359,16 @@ const Dashboard: React.FC = () => {
     [stocks, showAllMostTraded]
   );
   const aboveAvgVolume = useMemo(() => {
-    const base = historical21Results !== null ? historical21Results : csvUtils.aboveVolumeAverage(stocks);
+    const base: Above21DayResult[] = historical21Results !== null
+      ? historical21Results
+      : csvUtils.aboveVolumeAverage(stocks);
     if (above21DaySortBy === 'turnover-asc') {
-      return csvUtils.sortBy21DayTurnoverAsc(base);
+      return csvUtils.sortBy21DayAverageVolumeAsc(base);
     } else if (above21DaySortBy === 'turnover-desc') {
-      return csvUtils.sortBy21DayTurnoverDesc(base);
+      return csvUtils.sortBy21DayAverageVolumeDesc(base);
     }
     return base; // Default: by percentAbove
   }, [stocks, above21DaySortBy, historical21Results]);
-
-
-
-  // Helper function to determine if open-close difference is higher (red) or lower (green)
-  const getOpenCloseClass = (stock: StockData): 'higher' | 'lower' => {
-    const diff = stock.open - stock.close;
-    return diff > 0 ? 'higher' : 'lower';
-  };
-
   const totalVolumeStr = csvUtils.formatNumber(summary.totalVolume) + 'Cr';
   const gainersPercent = ((summary.gainers / summary.totalStocks) * 100).toFixed(1);
   const losersPercent = ((summary.losers / summary.totalStocks) * 100).toFixed(1);
@@ -362,7 +378,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard">
       {/* Header */}
-      <header className="dashboard-header">
+      <header className={`dashboard-header ${isHeaderCompact ? 'compact' : ''}`}>
         <div className="header-content">
           <div>
             <h1 className="header-title">NSE EOD Data Analyzer</h1>
@@ -562,21 +578,19 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
-                          <th>Open - Close</th>
                           <th>ROC%</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topGainers
+                          .filter((s) => s.open <= s.close)
                           .filter((s) => !gainersSearch || s.symbol.toUpperCase().includes(gainersSearch))
                           .slice(0, showAllGainers ? topGainers.length : 10)
                           .map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
-                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
-                                ₹{(s.open - s.close).toFixed(2)}
-                              </td>
+
                               <td className="roc-cell gainers">
                                 +{(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
                               </td>
@@ -609,21 +623,18 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
-                          <th>Open - Close</th>
                           <th>ROC%</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topLosers
+                          .filter((s) => s.open <= s.close)
                           .filter((s) => !losersSearch || s.symbol.toUpperCase().includes(losersSearch))
                           .slice(0, showAllLosers ? topLosers.length : 10)
                           .map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
-                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
-                                ₹{(s.open - s.close).toFixed(2)}
-                              </td>
                               <td className="roc-cell losers">
                                 {(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
                               </td>
@@ -662,21 +673,18 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
-                          <th>Open - Close</th>
                           <th>Turnover</th>
                         </tr>
                       </thead>
                       <tbody>
                         {topTurnover
+                          .filter((s) => s.open <= s.close)
                           .filter((s) => !turnoverSearch || s.symbol.toUpperCase().includes(turnoverSearch))
                           .slice(0, showAllTurnover ? topTurnover.length : 10)
                           .map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
-                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
-                                ₹{(s.open - s.close).toFixed(2)}
-                              </td>
                               <td className="turnover-cell">
                                 {csvUtils.formatNumber(s.turnoverLacs)}L
                               </td>
@@ -709,21 +717,18 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
-                          <th>Open - Close</th>
                           <th>Trades</th>
                         </tr>
                       </thead>
                       <tbody>
                         {mostTraded
+                          .filter((s) => s.open <= s.close)
                           .filter((s) => !mostTradedSearch || s.symbol.toUpperCase().includes(mostTradedSearch))
                           .slice(0, showAllMostTraded ? mostTraded.length : 10)
                           .map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
-                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
-                                ₹{(s.open - s.close).toFixed(2)}
-                              </td>
                               <td className="trades-cell">{s.ttlTrdQnty.toLocaleString()}</td>
                             </tr>
                           ))}
@@ -747,16 +752,16 @@ const Dashboard: React.FC = () => {
                   <button
                     className={`sort-btn ${above21DaySortBy === 'turnover-desc' ? 'active' : ''}`}
                     onClick={() => setAbove21DaySortBy('turnover-desc')}
-                    title="Sort by turnover highest first"
+                    title="Sort by 21-day average volume highest first"
                   >
-                    💰 Turnover (High to Low)
+                    21-Day Avg Vol (High to Low)
                   </button>
                   <button
                     className={`sort-btn ${above21DaySortBy === 'turnover-asc' ? 'active' : ''}`}
                     onClick={() => setAbove21DaySortBy('turnover-asc')}
-                    title="Sort by turnover lowest first"
+                    title="Sort by 21-day average volume lowest first"
                   >
-                    💰 Turnover (Low to High)
+                    21-Day Avg Vol (Low to High)
                   </button>
                   <div style={{ marginLeft: 12, display: 'flex', alignItems: 'center' }}>
                     <input
@@ -785,7 +790,6 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
-                          <th>Open - Close</th>
                           <th>Today's Volume</th>
                           <th>21-Day Avg Vol</th>
                           <th>% Above Avg</th>
@@ -795,6 +799,7 @@ const Dashboard: React.FC = () => {
                       </thead>
                       <tbody>
                         {aboveAvgVolume.filter(Boolean)
+                          .filter((s: any) => (s?.open ?? 0) <= (s?.close ?? 0))
                           .filter((s: any) => {
                             if (!above21Search) return true;
                             return (s?.symbol || '').toString().toUpperCase().includes(above21Search);
@@ -804,9 +809,6 @@ const Dashboard: React.FC = () => {
                             <tr key={`${s?.symbol ?? 'unk'}-${s?.date ?? ''}`}>
                               <td className="symbol-cell">{s?.symbol ?? '-'}</td>
                               <td className="price-cell">₹{Number(s?.close || 0).toFixed(2)}</td>
-                              <td className={`open-close-cell ${getOpenCloseClass(s as StockData)}`}>
-                                ₹{((s?.open ?? 0) - (s?.close ?? 0)).toFixed(2)}
-                              </td>
                               <td className="trades-cell">
                                 {csvUtils.formatNumber(Number(s?.currentQnty || 0))}
                               </td>
