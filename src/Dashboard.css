@@ -530,6 +530,12 @@
   border-color: var(--color-gray-400);
 }
 
+.table-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Stock Table */
 .stock-table {
   width: 100%;
@@ -607,6 +613,89 @@
   text-align: center;
   color: var(--color-gray-600);
   font-size: 14px;
+}
+
+.fullscreen-table-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.64);
+  backdrop-filter: blur(6px);
+  z-index: 1200;
+  padding: 24px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.fullscreen-table-dialog {
+  width: min(96vw, 1440px);
+  height: calc(100vh - 48px);
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fullscreen-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-gray-200);
+  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+}
+
+.fullscreen-table-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-gray-800);
+}
+
+.fullscreen-table-subtitle {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: var(--color-gray-600);
+}
+
+.fullscreen-table-close {
+  padding: 10px 16px;
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-table-close:hover {
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-400);
+}
+
+.fullscreen-table-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0 24px 24px;
+}
+
+.stock-table-fullscreen {
+  min-width: 100%;
+}
+
+.stock-table-fullscreen thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-gray-50);
 }
 
 /* Sentiment Section */
@@ -786,6 +875,14 @@
     flex-direction: column;
   }
 
+  .table-action-group {
+    width: 100%;
+  }
+
+  .table-action-group .toggle-btn {
+    flex: 1;
+  }
+
   .sorting-controls input {
     width: 100%;
     min-width: unset;
@@ -807,5 +904,30 @@
 
   .stock-table td {
     padding: 10px 8px;
+  }
+
+  .fullscreen-table-overlay {
+    padding: 8px;
+  }
+
+  .fullscreen-table-dialog {
+    width: 100vw;
+    height: calc(100vh - 16px);
+    border-radius: 14px;
+  }
+
+  .fullscreen-table-header {
+    padding: 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fullscreen-table-body {
+    padding: 0 12px 12px;
+  }
+
+  .fullscreen-table-close {
+    width: 100%;
+    justify-content: center;
   }
 }

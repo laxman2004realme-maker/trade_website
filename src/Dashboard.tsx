@@ -19,6 +19,8 @@ type Above21DayResult = StockData & {
   daysOfData?: number;
 };
 
+type FullscreenTableKey = 'gainers' | 'losers' | 'turnover' | 'mostTraded' | 'above21';
+
 const Dashboard: React.FC = () => {
   // Utility to format date as YYYY-MM-DD without timezone conversion
   const formatDateString = (date: Date | string): string => {
@@ -54,6 +56,7 @@ const Dashboard: React.FC = () => {
   const [turnoverSearch, setTurnoverSearch] = useState('');
   const [mostTradedSearch, setMostTradedSearch] = useState('');
   const [isHeaderCompact, setIsHeaderCompact] = useState(false);
+  const [fullscreenTable, setFullscreenTable] = useState<FullscreenTableKey | null>(null);
 
   const loadUploads = async () => {
     try {
@@ -80,6 +83,25 @@ const Dashboard: React.FC = () => {
       window.removeEventListener('scroll', updateHeaderState);
     };
   }, []);
+
+  useEffect(() => {
+    if (!fullscreenTable) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setFullscreenTable(null);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fullscreenTable]);
 
   const handleFile = async (file?: File) => {
     if (!file) return;
@@ -369,11 +391,216 @@ const Dashboard: React.FC = () => {
     }
     return base; // Default: by percentAbove
   }, [stocks, above21DaySortBy, historical21Results]);
+  const filteredTopGainers = useMemo(
+    () =>
+      topGainers
+        .filter((s) => s.open <= s.close)
+        .filter((s) => !gainersSearch || s.symbol.toUpperCase().includes(gainersSearch)),
+    [topGainers, gainersSearch]
+  );
+  const filteredTopLosers = useMemo(
+    () =>
+      topLosers
+        .filter((s) => s.open <= s.close)
+        .filter((s) => !losersSearch || s.symbol.toUpperCase().includes(losersSearch)),
+    [topLosers, losersSearch]
+  );
+  const filteredTopTurnover = useMemo(
+    () =>
+      topTurnover
+        .filter((s) => s.open <= s.close)
+        .filter((s) => !turnoverSearch || s.symbol.toUpperCase().includes(turnoverSearch)),
+    [topTurnover, turnoverSearch]
+  );
+  const filteredMostTraded = useMemo(
+    () =>
+      mostTraded
+        .filter((s) => s.open <= s.close)
+        .filter((s) => !mostTradedSearch || s.symbol.toUpperCase().includes(mostTradedSearch)),
+    [mostTraded, mostTradedSearch]
+  );
+  const filteredAboveAvgVolume = useMemo(
+    () =>
+      aboveAvgVolume
+        .filter(Boolean)
+        .filter((s) => (s?.open ?? 0) <= (s?.close ?? 0))
+        .filter((s) => !above21Search || (s?.symbol || '').toString().toUpperCase().includes(above21Search)),
+    [aboveAvgVolume, above21Search]
+  );
+  const visibleTopGainers = showAllGainers ? filteredTopGainers : filteredTopGainers.slice(0, 10);
+  const visibleTopLosers = showAllLosers ? filteredTopLosers : filteredTopLosers.slice(0, 10);
+  const visibleTopTurnover = showAllTurnover ? filteredTopTurnover : filteredTopTurnover.slice(0, 10);
+  const visibleMostTraded = showAllMostTraded ? filteredMostTraded : filteredMostTraded.slice(0, 10);
+  const visibleAboveAvgVolume = showAllAbove21 ? filteredAboveAvgVolume : filteredAboveAvgVolume.slice(0, 20);
   const totalVolumeStr = csvUtils.formatNumber(summary.totalVolume) + 'Cr';
   const gainersPercent = ((summary.gainers / summary.totalStocks) * 100).toFixed(1);
   const losersPercent = ((summary.losers / summary.totalStocks) * 100).toFixed(1);
 
   const hasData = stocks.length > 0;
+  const fullscreenTitle =
+    fullscreenTable === 'gainers'
+      ? 'Top Gainers'
+      : fullscreenTable === 'losers'
+        ? 'Top Losers'
+        : fullscreenTable === 'turnover'
+          ? 'Top Turnover Stocks'
+          : fullscreenTable === 'mostTraded'
+            ? 'Most Traded Stocks'
+            : fullscreenTable === 'above21'
+              ? 'Above 21-Day Average Volume'
+              : '';
+  const fullscreenCount =
+    fullscreenTable === 'gainers'
+      ? filteredTopGainers.length
+      : fullscreenTable === 'losers'
+        ? filteredTopLosers.length
+        : fullscreenTable === 'turnover'
+          ? filteredTopTurnover.length
+          : fullscreenTable === 'mostTraded'
+            ? filteredMostTraded.length
+            : fullscreenTable === 'above21'
+              ? filteredAboveAvgVolume.length
+              : 0;
+  const renderFullscreenTable = () => {
+    if (fullscreenTable === 'gainers') {
+      return (
+        <table className="stock-table stock-table-fullscreen">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Close Price</th>
+              <th>ROC%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTopGainers.map((s) => (
+              <tr key={`fs-gainers-${s.symbol}`}>
+                <td className="symbol-cell">{s.symbol}</td>
+                <td className="price-cell">â‚¹{s.close.toFixed(2)}</td>
+                <td className="roc-cell gainers">
+                  +{(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    if (fullscreenTable === 'losers') {
+      return (
+        <table className="stock-table stock-table-fullscreen">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Close Price</th>
+              <th>ROC%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTopLosers.map((s) => (
+              <tr key={`fs-losers-${s.symbol}`}>
+                <td className="symbol-cell">{s.symbol}</td>
+                <td className="price-cell">â‚¹{s.close.toFixed(2)}</td>
+                <td className="roc-cell losers">
+                  {(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    if (fullscreenTable === 'turnover') {
+      return (
+        <table className="stock-table stock-table-fullscreen">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Close Price</th>
+              <th>Turnover</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTopTurnover.map((s) => (
+              <tr key={`fs-turnover-${s.symbol}`}>
+                <td className="symbol-cell">{s.symbol}</td>
+                <td className="price-cell">â‚¹{s.close.toFixed(2)}</td>
+                <td className="turnover-cell">{csvUtils.formatNumber(s.turnoverLacs)}L</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    if (fullscreenTable === 'mostTraded') {
+      return (
+        <table className="stock-table stock-table-fullscreen">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Close Price</th>
+              <th>Trades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMostTraded.map((s) => (
+              <tr key={`fs-trades-${s.symbol}`}>
+                <td className="symbol-cell">{s.symbol}</td>
+                <td className="price-cell">â‚¹{s.close.toFixed(2)}</td>
+                <td className="trades-cell">{s.ttlTrdQnty.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    if (fullscreenTable === 'above21') {
+      return (
+        <table className="stock-table stock-table-fullscreen">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Close Price</th>
+              <th>Today's Volume</th>
+              <th>21-Day Avg Vol</th>
+              <th>% Above Avg</th>
+              <th>Today's Turnover (â‚¹ Lakhs)</th>
+              <th>21-Day Avg Turnover (â‚¹ Lakhs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAboveAvgVolume.map((s: any) => (
+              <tr key={`fs-above21-${s?.symbol ?? 'unk'}-${s?.date ?? ''}`}>
+                <td className="symbol-cell">{s?.symbol ?? '-'}</td>
+                <td className="price-cell">â‚¹{Number(s?.close || 0).toFixed(2)}</td>
+                <td className="trades-cell">
+                  {csvUtils.formatNumber(Number(s?.currentQnty || 0))}
+                </td>
+                <td className="trades-cell">
+                  {csvUtils.formatNumber(Number(s?.avgQnty21Days || 0))}
+                </td>
+                <td className="roc-cell gainers">
+                  +{Number(s?.percentAboveAvg || 0).toFixed(2)}%
+                </td>
+                <td className="turnover-cell">
+                  {csvUtils.formatNumber(Number(s?.currentTurnover || 0))}
+                </td>
+                <td className="turnover-cell">
+                  {csvUtils.formatNumber(Number(s?.avg21DaysTurnover || 0))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="dashboard">
@@ -565,12 +792,20 @@ const Dashboard: React.FC = () => {
                           onChange={(e) => setGainersSearch(e.target.value.trim().toUpperCase())}
                           style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12 }}
                         />
-                        <button
-                          className="toggle-btn"
-                          onClick={() => setShowAllGainers((v) => !v)}
-                        >
-                          {showAllGainers ? 'Show Less' : 'View All'}
-                        </button>
+                        <div className="table-action-group">
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setShowAllGainers((v) => !v)}
+                          >
+                            {showAllGainers ? 'Show Less' : 'View All'}
+                          </button>
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setFullscreenTable('gainers')}
+                          >
+                            Full Screen
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <table className="stock-table" style={showAllGainers ? { display: 'block', maxHeight: 360, overflowY: 'auto' } : { display: 'block' }}>
@@ -582,11 +817,7 @@ const Dashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {topGainers
-                          .filter((s) => s.open <= s.close)
-                          .filter((s) => !gainersSearch || s.symbol.toUpperCase().includes(gainersSearch))
-                          .slice(0, showAllGainers ? topGainers.length : 10)
-                          .map((s) => (
+                        {visibleTopGainers.map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
@@ -610,12 +841,20 @@ const Dashboard: React.FC = () => {
                           onChange={(e) => setLosersSearch(e.target.value.trim().toUpperCase())}
                           style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12 }}
                         />
-                        <button
-                          className="toggle-btn"
-                          onClick={() => setShowAllLosers((v) => !v)}
-                        >
-                          {showAllLosers ? 'Show Less' : 'View All'}
-                        </button>
+                        <div className="table-action-group">
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setShowAllLosers((v) => !v)}
+                          >
+                            {showAllLosers ? 'Show Less' : 'View All'}
+                          </button>
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setFullscreenTable('losers')}
+                          >
+                            Full Screen
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <table className="stock-table" style={showAllLosers ? { display: 'block', maxHeight: 360, overflowY: 'auto' } : { display: 'block' }}>
@@ -627,11 +866,7 @@ const Dashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {topLosers
-                          .filter((s) => s.open <= s.close)
-                          .filter((s) => !losersSearch || s.symbol.toUpperCase().includes(losersSearch))
-                          .slice(0, showAllLosers ? topLosers.length : 10)
-                          .map((s) => (
+                        {visibleTopLosers.map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
@@ -660,12 +895,20 @@ const Dashboard: React.FC = () => {
                           onChange={(e) => setTurnoverSearch(e.target.value.trim().toUpperCase())}
                           style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12 }}
                         />
-                        <button
-                          className="toggle-btn"
-                          onClick={() => setShowAllTurnover((v) => !v)}
-                        >
-                          {showAllTurnover ? 'Show Less' : 'View All'}
-                        </button>
+                        <div className="table-action-group">
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setShowAllTurnover((v) => !v)}
+                          >
+                            {showAllTurnover ? 'Show Less' : 'View All'}
+                          </button>
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setFullscreenTable('turnover')}
+                          >
+                            Full Screen
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <table className="stock-table" style={showAllTurnover ? { display: 'block', maxHeight: 360, overflowY: 'auto' } : { display: 'block' }}>
@@ -677,11 +920,7 @@ const Dashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {topTurnover
-                          .filter((s) => s.open <= s.close)
-                          .filter((s) => !turnoverSearch || s.symbol.toUpperCase().includes(turnoverSearch))
-                          .slice(0, showAllTurnover ? topTurnover.length : 10)
-                          .map((s) => (
+                        {visibleTopTurnover.map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
@@ -704,12 +943,20 @@ const Dashboard: React.FC = () => {
                           onChange={(e) => setMostTradedSearch(e.target.value.trim().toUpperCase())}
                           style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12 }}
                         />
-                        <button
-                          className="toggle-btn"
-                          onClick={() => setShowAllMostTraded((v) => !v)}
-                        >
-                          {showAllMostTraded ? 'Show Less' : 'View All'}
-                        </button>
+                        <div className="table-action-group">
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setShowAllMostTraded((v) => !v)}
+                          >
+                            {showAllMostTraded ? 'Show Less' : 'View All'}
+                          </button>
+                          <button
+                            className="toggle-btn"
+                            onClick={() => setFullscreenTable('mostTraded')}
+                          >
+                            Full Screen
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <table className="stock-table" style={showAllMostTraded ? { display: 'block', maxHeight: 360, overflowY: 'auto' } : { display: 'block' }}>
@@ -721,11 +968,7 @@ const Dashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {mostTraded
-                          .filter((s) => s.open <= s.close)
-                          .filter((s) => !mostTradedSearch || s.symbol.toUpperCase().includes(mostTradedSearch))
-                          .slice(0, showAllMostTraded ? mostTraded.length : 10)
-                          .map((s) => (
+                        {visibleMostTraded.map((s) => (
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
@@ -770,17 +1013,24 @@ const Dashboard: React.FC = () => {
                       onChange={(e) => setAbove21Search(e.target.value.trim().toUpperCase())}
                       style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd' }}
                     />
-                    <button
-                      className="toggle-btn"
-                      onClick={() => setShowAllAbove21((v) => !v)}
-                      style={{ marginLeft: 8 }}
-                    >
-                      {showAllAbove21 ? 'Show Less' : 'View All'}
-                    </button>
+                    <div className="table-action-group" style={{ marginLeft: 8 }}>
+                      <button
+                        className="toggle-btn"
+                        onClick={() => setShowAllAbove21((v) => !v)}
+                      >
+                        {showAllAbove21 ? 'Show Less' : 'View All'}
+                      </button>
+                      <button
+                        className="toggle-btn"
+                        onClick={() => setFullscreenTable('above21')}
+                      >
+                        Full Screen
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="column-card">
-                  {aboveAvgVolume.length === 0 ? (
+                  {filteredAboveAvgVolume.length === 0 ? (
                     <div className="no-results">
                       No stocks found with volume above their 21-day average.
                     </div>
@@ -798,14 +1048,7 @@ const Dashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {aboveAvgVolume.filter(Boolean)
-                          .filter((s: any) => (s?.open ?? 0) <= (s?.close ?? 0))
-                          .filter((s: any) => {
-                            if (!above21Search) return true;
-                            return (s?.symbol || '').toString().toUpperCase().includes(above21Search);
-                          })
-                          .slice(0, showAllAbove21 ? aboveAvgVolume.length : 20)
-                          .map((s: any) => (
+                        {visibleAboveAvgVolume.map((s: any) => (
                             <tr key={`${s?.symbol ?? 'unk'}-${s?.date ?? ''}`}>
                               <td className="symbol-cell">{s?.symbol ?? '-'}</td>
                               <td className="price-cell">₹{Number(s?.close || 0).toFixed(2)}</td>
@@ -870,6 +1113,30 @@ const Dashboard: React.FC = () => {
           )}
         </main>
       </ErrorBoundary>
+
+      {fullscreenTable && (
+        <div className="fullscreen-table-overlay" onClick={() => setFullscreenTable(null)}>
+          <div className="fullscreen-table-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="fullscreen-table-header">
+              <div>
+                <h3 className="fullscreen-table-title">{fullscreenTitle}</h3>
+                <p className="fullscreen-table-subtitle">
+                  {fullscreenCount.toLocaleString()} rows. Press Esc to close.
+                </p>
+              </div>
+              <button
+                className="fullscreen-table-close"
+                onClick={() => setFullscreenTable(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="fullscreen-table-body">
+              {renderFullscreenTable()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload Modal */}
       <UploadModal
