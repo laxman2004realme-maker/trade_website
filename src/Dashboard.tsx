@@ -345,6 +345,18 @@ const Dashboard: React.FC = () => {
     return base; // Default: by percentAbove
   }, [stocks, above21DaySortBy, historical21Results]);
 
+  // Helper function to determine if open-close difference is higher (red) or lower (green)
+  const getOpenCloseClass = (stock: StockData): 'higher' | 'lower' => {
+    const diff = stock.open - stock.close;
+    return diff > 0 ? 'higher' : 'lower';
+  };
+
+  // Helper function to determine if open-close difference is higher (red) or lower (green)
+  const getOpenCloseClass = (stock: StockData): 'higher' | 'lower' => {
+    const diff = stock.open - stock.close;
+    return diff > 0 ? 'higher' : 'lower';
+  };
+
   const totalVolumeStr = csvUtils.formatNumber(summary.totalVolume) + 'Cr';
   const gainersPercent = ((summary.gainers / summary.totalStocks) * 100).toFixed(1);
   const losersPercent = ((summary.losers / summary.totalStocks) * 100).toFixed(1);
@@ -554,6 +566,7 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
+                          <th>Open - Close</th>
                           <th>ROC%</th>
                         </tr>
                       </thead>
@@ -565,6 +578,9 @@ const Dashboard: React.FC = () => {
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
+                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
+                                ₹{(s.open - s.close).toFixed(2)}
+                              </td>
                               <td className="roc-cell gainers">
                                 +{(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
                               </td>
@@ -597,6 +613,7 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
+                          <th>Open - Close</th>
                           <th>ROC%</th>
                         </tr>
                       </thead>
@@ -608,6 +625,9 @@ const Dashboard: React.FC = () => {
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
+                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
+                                ₹{(s.open - s.close).toFixed(2)}
+                              </td>
                               <td className="roc-cell losers">
                                 {(((s.close - s.prevClose) / (s.prevClose || 1)) * 100).toFixed(2)}%
                               </td>
@@ -646,6 +666,7 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
+                          <th>Open - Close</th>
                           <th>Turnover</th>
                         </tr>
                       </thead>
@@ -657,6 +678,9 @@ const Dashboard: React.FC = () => {
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
+                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
+                                ₹{(s.open - s.close).toFixed(2)}
+                              </td>
                               <td className="turnover-cell">
                                 {csvUtils.formatNumber(s.turnoverLacs)}L
                               </td>
@@ -689,6 +713,7 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
+                          <th>Open - Close</th>
                           <th>Trades</th>
                         </tr>
                       </thead>
@@ -700,6 +725,9 @@ const Dashboard: React.FC = () => {
                             <tr key={s.symbol}>
                               <td className="symbol-cell">{s.symbol}</td>
                               <td className="price-cell">₹{s.close.toFixed(2)}</td>
+                              <td className={`open-close-cell ${getOpenCloseClass(s)}`}>
+                                ₹{(s.open - s.close).toFixed(2)}
+                              </td>
                               <td className="trades-cell">{s.ttlTrdQnty.toLocaleString()}</td>
                             </tr>
                           ))}
@@ -761,6 +789,7 @@ const Dashboard: React.FC = () => {
                         <tr>
                           <th>Symbol</th>
                           <th>Close Price</th>
+                          <th>Open - Close</th>
                           <th>Today's Volume</th>
                           <th>21-Day Avg Vol</th>
                           <th>% Above Avg</th>
@@ -779,6 +808,9 @@ const Dashboard: React.FC = () => {
                             <tr key={`${s?.symbol ?? 'unk'}-${s?.date ?? ''}`}>
                               <td className="symbol-cell">{s?.symbol ?? '-'}</td>
                               <td className="price-cell">₹{Number(s?.close || 0).toFixed(2)}</td>
+                              <td className={`open-close-cell ${getOpenCloseClass(s as StockData)}`}>
+                                ₹{((s?.open ?? 0) - (s?.close ?? 0)).toFixed(2)}
+                              </td>
                               <td className="trades-cell">
                                 {csvUtils.formatNumber(Number(s?.currentQnty || 0))}
                               </td>

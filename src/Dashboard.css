@@ -549,6 +549,26 @@
   color: #991b1b;
 }
 
+.open-close-cell {
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  text-align: center;
+  min-width: 75px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.open-close-cell.higher {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.open-close-cell.lower {
+  background: #d1fae5;
+  color: #065f46;
+}
+
 .turnover-cell,
 .trades-cell {
   color: var(--color-gray-700);
